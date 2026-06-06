@@ -115,7 +115,6 @@ public class RiskScoringService {
     }
 
     // get risk score of one borrower
-    @Cacheable (value = "riskScore", key = "#borrowerId")
     public RiskScore getRiskScore(Long borrowerId) {
         return riskScoreRepository.findByBorrowerId(borrowerId);
     }
