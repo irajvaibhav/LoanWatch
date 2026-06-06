@@ -58,16 +58,16 @@
     <div class="table-card">
         <table>
             <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Monthly Income</th>
-                    <th>Risk Level</th>
-                </tr>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Monthly Income</th>
+                <th>Risk Level</th>
+            </tr>
             </thead>
             <tbody id="borrowerTable">
-                <tr><td colspan="5" class="loading">Loading borrowers...</td></tr>
+            <tr><td colspan="5" class="loading">Loading borrowers...</td></tr>
             </tbody>
         </table>
     </div>
@@ -102,7 +102,7 @@
 
     async function getRiskLevel(borrowerId) {
         try {
-            const res = await fetch(`/api/agent/borrowers/${borrowerId}/risk`, {
+            const res = await fetch(`/api/manager/borrowers/${borrowerId}/risk`, {
                 headers: authHeaders()
             });
             if (!res.ok) return null;
@@ -174,7 +174,6 @@
                 method: 'POST',
                 headers: authHeaders()
             });
-            const msg = await res.text();
             btn.textContent = '✓ Done';
             setTimeout(() => {
                 btn.textContent = '▶ Run Risk Engine';

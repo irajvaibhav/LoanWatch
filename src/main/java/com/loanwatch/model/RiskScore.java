@@ -13,7 +13,9 @@ public class RiskScore {
 
     private Long borrowerId;
     private double score;
-    private String riskLevel; // LOW, MEDIUM, HIGH
+    private String riskLevel;
+    @com.fasterxml.jackson.databind.annotation.JsonSerialize(using = com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer.class)
+    @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer.class)// LOW, MEDIUM, HIGH
     private LocalDateTime calculatedAt;
 
     public Long getId() { return id; }

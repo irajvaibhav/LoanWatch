@@ -1,11 +1,12 @@
 package com.loanwatch.controller;
 
 import com.loanwatch.model.Borrower;
+import com.loanwatch.model.RiskScore;
 import com.loanwatch.service.BorrowerService;
+import com.loanwatch.service.RiskScoringService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.loanwatch.service.RiskScoringService;
 
 import java.util.List;
 
@@ -45,14 +46,22 @@ public class BorrowerController {
         return "Borrower deleted";
     }
 
+    // assign agent to borrower
     @PutMapping("/borrowers/{id}/assign-agent")
     public Borrower assignAgent(@PathVariable Long id, @RequestParam Long agentId) {
         return borrowerService.assignAgent(id, agentId);
     }
 
+    // run risk engine manually
     @PostMapping("/run-risk-engine")
     public String runRiskEngine() {
         riskScoringService.calculateRiskForAll();
         return "Risk engine ran successfully";
+    }
+
+    // get risk score of a borrower
+    @GetMapping("/borrowers/{id}/risk")
+    public RiskScore getRiskScore(@PathVariable Long id) {
+        return riskScoringService.getRiskScore(id);
     }
 }
