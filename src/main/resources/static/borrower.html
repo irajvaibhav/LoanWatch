@@ -50,16 +50,16 @@
     <div class="table-card">
         <table>
             <thead>
-                <tr>
-                    <th>Loan ID</th>
-                    <th>Amount</th>
-                    <th>Disbursed</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                </tr>
+            <tr>
+                <th>Loan ID</th>
+                <th>Amount</th>
+                <th>Disbursed</th>
+                <th>Due Date</th>
+                <th>Status</th>
+            </tr>
             </thead>
             <tbody id="loanTable">
-                <tr><td colspan="5" class="loading">Loading loans...</td></tr>
+            <tr><td colspan="5" class="loading">Loading loans...</td></tr>
             </tbody>
         </table>
     </div>
@@ -173,12 +173,12 @@
 
     async function loadRisk() {
         try {
-            const res = await fetch(`/api/agent/borrowers/${borrowerId}/risk`, {
+            const res = await fetch(`/api/manager/borrowers/${borrowerId}/risk`, {
                 headers: authHeaders()
             });
 
             if (!res.ok) {
-                document.getElementById('riskDisplay').innerHTML = '<p style="color:#aaa; font-size:0.88rem;">No risk data yet</p>';
+                document.getElementById('riskDisplay').innerHTML = '<p style="color:#aaa; font-size:0.88rem;">No risk data yet — run the risk engine first</p>';
                 return;
             }
 
@@ -198,29 +198,33 @@
     }
 
     async function loadLoans() {
-        const res = await fetch(`/api/manager/loans/borrower/${borrowerId}`, {
-            headers: authHeaders()
-        });
-        const loans = await res.json();
-        const tbody = document.getElementById('loanTable');
+        try {
+            const res = await fetch(`/api/manager/loans/borrower/${borrowerId}`, {
+                headers: authHeaders()
+            });
+            const loans = await res.json();
+            const tbody = document.getElementById('loanTable');
 
-        if (loans.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">No loans found</td></tr>';
-            return;
-        }
+            if (loans.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">No loans found</td></tr>';
+                return;
+            }
 
-        tbody.innerHTML = '';
-        for (const loan of loans) {
-            const statusColor = loan.status === 'DEFAULTED' ? '#e74c3c' : loan.status === 'CLOSED' ? '#888' : '#27ae60';
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${loan.id}</td>
-                <td>₹${loan.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
-                <td>${loan.disbursedDate || '–'}</td>
-                <td>${loan.dueDate || '–'}</td>
-                <td><span style="color:${statusColor}; font-weight:600; font-size:0.82rem;">${loan.status}</span></td>
-            `;
-            tbody.appendChild(row);
+            tbody.innerHTML = '';
+            for (const loan of loans) {
+                const statusColor = loan.status === 'DEFAULTED' ? '#e74c3c' : loan.status === 'CLOSED' ? '#888' : '#27ae60';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${loan.id}</td>
+                    <td>₹${loan.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                    <td>${loan.disbursedDate || '–'}</td>
+                    <td>${loan.dueDate || '–'}</td>
+                    <td><span style="color:${statusColor}; font-weight:600; font-size:0.82rem;">${loan.status}</span></td>
+                `;
+                tbody.appendChild(row);
+            }
+        } catch {
+            document.getElementById('loanTable').innerHTML = '<tr><td colspan="5" class="loading">Could not load loans</td></tr>';
         }
     }
 
