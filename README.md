@@ -14,7 +14,7 @@ I built LoanWatch to solve this — it automatically scores every borrower every
 
 ## Live Demo
 
-> **Frontend:** https://loanwatch-production.up.railway.app/dashboard.html 
+> **Frontend:** loanwatch-production.up.railway.app
 > **Swagger UI:** `http://localhost:8080/swagger-ui/index.html`
 
 **Demo credentials (no registration needed):**
