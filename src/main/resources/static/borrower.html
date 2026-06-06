@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoanWatch – Borrower Detail</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <h1>LoanWatch</h1>
+    <div style="display:flex; align-items:center; gap:16px;">
+        <span id="userEmail"></span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<div class="page-content">
+    <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+
+    <div class="detail-grid">
+        <div class="info-card" id="borrowerInfo">
+            <h3>Borrower Info</h3>
+            <p class="loading">Loading...</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Risk Score</h3>
+            <div class="risk-display" id="riskDisplay">
+                <p class="loading">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Loan ID</th>
+                    <th>Amount</th>
+                    <th>Disbursed</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="loanTable">
+                <tr><td colspan="5" class="loading">Loading loans...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        window.location.href = 'index.html';
+    }
+
+    function parseEmail(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.sub;
+        } catch {
+            return '';
+        }
+    }
+
+    document.getElementById('userEmail').textContent = parseEmail(token);
+
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+    }
+
+    function authHeaders() {
+        return { 'Authorization': 'Bearer ' + token };
+    }
+
+    const borrowerId = new URLSearchParams(window.location.search).get('id');
+
+    if (!borrowerId) {
+        window.location.href = 'dashboard.html';
+    }
+
+    async function loadBorrower() {
+        const res = await fetch(`/api/manager/borrowers/${borrowerId}`, {
+            headers: authHeaders()
+        });
+        const b = await res.json();
+
+        document.title = `LoanWatch – ${b.name}`;
+
+        document.getElementById('borrowerInfo').innerHTML = `
+            <h3>Borrower Info</h3>
+            <div class="info-row">
+                <span class="label">Name</span>
+                <span class="value">${b.name}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Phone</span>
+                <span class="value">${b.phone}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Address</span>
+                <span class="value">${b.address}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Monthly Income</span>
+                <span class="value">₹${b.monthlyIncome.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Assigned Agent ID</span>
+                <span class="value">${b.assignedAgentId || '–'}</span>
+            </div>
+        `;
+    }
+
+    async function loadRisk() {
+        try {
+            const res = await fetch(`/api/agent/borrowers/${borrowerId}/risk`, {
+                headers: authHeaders()
+            });
+
+            if (!res.ok) {
+                document.getElementById('riskDisplay').innerHTML = '<p style="color:#aaa; font-size:0.88rem;">No risk data yet</p>';
+                return;
+            }
+
+            const data = await res.json();
+            const level = data.riskLevel;
+
+            document.getElementById('riskDisplay').innerHTML = `
+                <div class="risk-score-num">${data.score}</div>
+                <div class="risk-level-text ${level}">${level} RISK</div>
+                <p style="font-size:0.78rem; color:#aaa; margin-top:10px;">
+                    Last calculated: ${new Date(data.calculatedAt).toLocaleString('en-IN')}
+                </p>
+            `;
+        } catch {
+            document.getElementById('riskDisplay').innerHTML = '<p style="color:#aaa; font-size:0.88rem;">Could not load risk score</p>';
+        }
+    }
+
+    async function loadLoans() {
+        const res = await fetch(`/api/manager/loans/borrower/${borrowerId}`, {
+            headers: authHeaders()
+        });
+        const loans = await res.json();
+        const tbody = document.getElementById('loanTable');
+
+        if (loans.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="loading">No loans found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        for (const loan of loans) {
+            const statusColor = loan.status === 'DEFAULTED' ? '#e74c3c' : loan.status === 'CLOSED' ? '#888' : '#27ae60';
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${loan.id}</td>
+                <td>₹${loan.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                <td>${loan.disbursedDate || '–'}</td>
+                <td>${loan.dueDate || '–'}</td>
+                <td><span style="color:${statusColor}; font-weight:600; font-size:0.82rem;">${loan.status}</span></td>
+            `;
+            tbody.appendChild(row);
+        }
+    }
+
+    loadBorrower();
+    loadRisk();
+    loadLoans();
+</script>
+
+</body>
+</html>

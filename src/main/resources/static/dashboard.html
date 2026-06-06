@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoanWatch – Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <h1>LoanWatch</h1>
+    <div style="display:flex; align-items:center; gap:16px;">
+        <span id="userEmail"></span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<div class="page-content">
+    <p class="page-title">Borrower Overview</p>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <h3>Total Borrowers</h3>
+            <div class="count" id="totalCount">–</div>
+        </div>
+        <div class="stat-card high">
+            <h3>High Risk</h3>
+            <div class="count" id="highCount">–</div>
+        </div>
+        <div class="stat-card medium">
+            <h3>Medium Risk</h3>
+            <div class="count" id="mediumCount">–</div>
+        </div>
+        <div class="stat-card low">
+            <h3>Low Risk</h3>
+            <div class="count" id="lowCount">–</div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Monthly Income</th>
+                    <th>Risk Level</th>
+                </tr>
+            </thead>
+            <tbody id="borrowerTable">
+                <tr><td colspan="5" class="loading">Loading borrowers...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        window.location.href = 'index.html';
+    }
+
+    function parseEmail(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.sub;
+        } catch {
+            return '';
+        }
+    }
+
+    document.getElementById('userEmail').textContent = parseEmail(token);
+
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+    }
+
+    function authHeaders() {
+        return { 'Authorization': 'Bearer ' + token };
+    }
+
+    async function getRiskLevel(borrowerId) {
+        try {
+            const res = await fetch(`/api/agent/borrowers/${borrowerId}/risk`, {
+                headers: authHeaders()
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.riskLevel || null;
+        } catch {
+            return null;
+        }
+    }
+
+    async function loadDashboard() {
+        try {
+            const res = await fetch('/api/manager/borrowers', {
+                headers: authHeaders()
+            });
+
+            if (res.status === 403) {
+                document.getElementById('borrowerTable').innerHTML =
+                    '<tr><td colspan="5" class="loading">Access denied — login as MANAGER or ADMIN</td></tr>';
+                return;
+            }
+
+            const borrowers = await res.json();
+
+            document.getElementById('totalCount').textContent = borrowers.length;
+
+            let high = 0, medium = 0, low = 0;
+            const tbody = document.getElementById('borrowerTable');
+            tbody.innerHTML = '';
+
+            for (const b of borrowers) {
+                const risk = await getRiskLevel(b.id);
+                if (risk === 'HIGH') high++;
+                else if (risk === 'MEDIUM') medium++;
+                else if (risk === 'LOW') low++;
+
+                const badgeClass = risk || 'NA';
+                const badgeText = risk || 'Not scored';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${b.id}</td>
+                    <td>${b.name}</td>
+                    <td>${b.phone}</td>
+                    <td>₹${b.monthlyIncome.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                    <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+                `;
+                row.onclick = () => window.location.href = `borrower.html?id=${b.id}`;
+                tbody.appendChild(row);
+            }
+
+            document.getElementById('highCount').textContent = high;
+            document.getElementById('mediumCount').textContent = medium;
+            document.getElementById('lowCount').textContent = low;
+
+        } catch (e) {
+            document.getElementById('borrowerTable').innerHTML =
+                '<tr><td colspan="5" class="loading">Failed to load data</td></tr>';
+        }
+    }
+
+    loadDashboard();
+</script>
+
+</body>
+</html>
