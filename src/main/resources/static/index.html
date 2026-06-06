@@ -11,6 +11,7 @@
             margin-bottom: 24px;
             border-bottom: 2px solid #f0f0f0;
         }
+
         .tab {
             flex: 1;
             text-align: center;
@@ -22,12 +23,20 @@
             border-bottom: 2px solid transparent;
             margin-bottom: -2px;
         }
+
         .tab.active {
             color: #1a3c5e;
             border-bottom-color: #1a3c5e;
         }
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
         .success-msg {
             color: #27ae60;
             font-size: 0.82rem;
@@ -35,6 +44,7 @@
             text-align: center;
             display: none;
         }
+
         .role-select {
             width: 100%;
             padding: 10px 12px;
@@ -45,36 +55,55 @@
             background: white;
             color: #333;
         }
-        .role-select:focus { border-color: #1a3c5e; }
-        .demo-box {
-            background: #f0f5fa;
-            border: 1px solid #cce0f5;
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            text-align: center;
+
+        .role-select:focus {
+            border-color: #1a3c5e;
         }
-        .demo-box p {
-            margin: 0 0 4px 0;
-            font-size: 0.82rem;
-            color: #555;
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 18px 0;
         }
-        .demo-box strong {
-            color: #1a3c5e;
-            font-size: 0.85rem;
+
+        .divider hr {
+            flex: 1;
+            border: none;
+            border-top: 1px solid #eee;
         }
-        .btn-demo {
-            margin-top: 8px;
+
+        .divider span {
+            font-size: 0.78rem;
+            color: #bbb;
+        }
+
+        .btn-guest {
+            width: 100%;
+            padding: 11px;
             background: white;
             color: #1a3c5e;
-            border: 1px solid #1a3c5e;
-            padding: 6px 16px;
+            border: 2px solid #1a3c5e;
             border-radius: 6px;
-            font-size: 0.82rem;
+            font-size: 0.9rem;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        .btn-demo:hover { background: #1a3c5e; color: white; }
+
+        .btn-guest:hover {
+            background: #f0f4f8;
+        }
+
+        .guest-note {
+            font-size: 0.75rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -84,12 +113,13 @@
         <h2>LoanWatch</h2>
         <p>Loan risk monitoring system</p>
 
-        <!-- Demo box -->
-        <div class="demo-box" style="margin-top: 16px;">
-            <strong>🔍 Try Demo</strong>
-            <p>Email: demo@loanwatch.com</p>
-            <p>Password: demo123</p>
-            <button class="btn-demo" onclick="fillDemo()">Use Demo Account</button>
+        <button class="btn-guest" style="margin-top: 20px;" onclick="guestLogin()">
+            👤 Guest / Demo Login
+        </button>
+        <p class="guest-note">One click access · Full feature demo · No registration needed</p>
+
+        <div class="divider">
+            <hr><span>or sign in with your account</span><hr>
         </div>
 
         <div class="tabs">
@@ -141,19 +171,17 @@
 </div>
 
 <script>
-    if (localStorage.getItem('token')) {
+    // only redirect if token exists AND user deliberately navigated here
+    // recruiters on a fresh machine won't have a token so they see this page
+    const existingToken = localStorage.getItem('token');
+    if (existingToken && !window.location.search.includes('logout')) {
         window.location.href = 'dashboard.html';
-    }
-
-    function fillDemo() {
-        switchTab('login');
-        document.getElementById('loginEmail').value = 'demo@loanwatch.com';
-        document.getElementById('loginPassword').value = 'demo123';
     }
 
     function switchTab(tab) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
         if (tab === 'login') {
             document.querySelectorAll('.tab')[0].classList.add('active');
             document.getElementById('loginPanel').classList.add('active');
@@ -163,10 +191,40 @@
         }
     }
 
+    async function doLogin(email, password) {
+        const res = await fetch(`/api/auth/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
+            method: 'POST'
+        });
+        const token = await res.text();
+        if (!res.ok || token.toLowerCase().includes('not found') || token.toLowerCase().includes('wrong')) {
+            return { error: token };
+        }
+        return { token };
+    }
+
+    async function guestLogin() {
+        const btn = document.querySelector('.btn-guest');
+        btn.textContent = 'Logging in...';
+        btn.disabled = true;
+
+        const result = await doLogin('demo@loanwatch.com', 'demo123');
+
+        if (result.error) {
+            btn.textContent = '👤 Guest / Demo Login';
+            btn.disabled = false;
+            alert('Demo account not ready yet. Please restart the server.');
+            return;
+        }
+
+        localStorage.setItem('token', result.token);
+        window.location.href = 'dashboard.html';
+    }
+
     async function login() {
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
         const errEl = document.getElementById('loginErr');
+
         errEl.style.display = 'none';
 
         if (!email || !password) {
@@ -175,25 +233,16 @@
             return;
         }
 
-        try {
-            const res = await fetch(`/api/auth/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
-                method: 'POST'
-            });
-            const token = await res.text();
+        const result = await doLogin(email, password);
 
-            if (!res.ok || token.toLowerCase().includes('not found') || token.toLowerCase().includes('wrong')) {
-                errEl.textContent = token;
-                errEl.style.display = 'block';
-                return;
-            }
-
-            localStorage.setItem('token', token);
-            window.location.href = 'dashboard.html';
-
-        } catch (e) {
-            errEl.textContent = 'Could not connect to server';
+        if (result.error) {
+            errEl.textContent = result.error;
             errEl.style.display = 'block';
+            return;
         }
+
+        localStorage.setItem('token', result.token);
+        window.location.href = 'dashboard.html';
     }
 
     async function register() {
@@ -213,25 +262,20 @@
             return;
         }
 
-        try {
-            const res = await fetch(`/api/auth/register?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&role=${role}`, {
-                method: 'POST'
-            });
-            const msg = await res.text();
+        const res = await fetch(`/api/auth/register?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&role=${role}`, {
+            method: 'POST'
+        });
 
-            if (msg.toLowerCase().includes('already')) {
-                errEl.textContent = msg;
-                errEl.style.display = 'block';
-                return;
-            }
+        const msg = await res.text();
 
-            successEl.style.display = 'block';
-            setTimeout(() => switchTab('login'), 1500);
-
-        } catch (e) {
-            errEl.textContent = 'Could not connect to server';
+        if (msg.toLowerCase().includes('already')) {
+            errEl.textContent = msg;
             errEl.style.display = 'block';
+            return;
         }
+
+        successEl.style.display = 'block';
+        setTimeout(() => switchTab('login'), 1500);
     }
 
     document.addEventListener('keydown', (e) => {
