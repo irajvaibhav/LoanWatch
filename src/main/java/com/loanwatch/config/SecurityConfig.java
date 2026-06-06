@@ -30,12 +30,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
+                        // static frontend files
+                        .requestMatchers("/", "/index.html", "/dashboard.html", "/borrower.html", "/style.css").permitAll()
                         // only admin can access these
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // manager and admin can access these
                         .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
-                        // field agent can access these
-                        .requestMatchers("/api/agent/**").hasRole("FIELD_AGENT")
+                        // field agent, manager and admin can access these
+                        .requestMatchers("/api/agent/**").hasAnyRole("FIELD_AGENT", "MANAGER", "ADMIN")
                         // everything else needs login
                         .anyRequest().authenticated()
                 )
