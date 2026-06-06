@@ -5,7 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoanWatch – Borrower Detail</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            width: 440px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal h3 { margin: 0 0 20px 0; font-size: 1.1rem; color: #1a3c5e; }
+        .modal .form-group { margin-bottom: 14px; }
+        .modal label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+        .modal input, .modal select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            box-sizing: border-box;
+            background: white;
+        }
+        .modal input:focus, .modal select:focus { border-color: #1a3c5e; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel {
+            flex: 1; padding: 10px; background: #f5f5f5;
+            border: none; border-radius: 6px; cursor: pointer; font-size: 0.88rem; color: #555;
+        }
+        .btn-cancel:hover { background: #eee; }
+        .btn-submit {
+            flex: 2; padding: 10px; background: #1a3c5e;
+            color: white; border: none; border-radius: 6px;
+            cursor: pointer; font-size: 0.88rem; font-weight: 600;
+        }
+        .btn-submit:hover { background: #14304d; }
+        .btn-submit:disabled { background: #aaa; cursor: not-allowed; }
+        .modal-err { font-size: 0.78rem; color: #e74c3c; margin-top: 10px; display: none; }
+        .btn-add-loan {
+            background: #27ae60; color: white; border: none;
+            padding: 7px 16px; border-radius: 6px;
+            font-size: 0.82rem; cursor: pointer; font-weight: 500;
+        }
+        .btn-add-loan:hover { background: #219a52; }
+    </style>
 </head>
+<!-- Add Loan Modal -->
+<div class="modal-overlay" id="loanModal">
+    <div class="modal">
+        <h3>Add New Loan</h3>
+        <div class="form-group">
+            <label>Loan Amount (₹)</label>
+            <input type="number" id="loanAmount" placeholder="e.g. 50000">
+        </div>
+        <div class="form-group">
+            <label>Disbursed Date</label>
+            <input type="date" id="loanDisbursed">
+        </div>
+        <div class="form-group">
+            <label>Due Date</label>
+            <input type="date" id="loanDue">
+        </div>
+        <div class="form-group">
+            <label>Status</label>
+            <select id="loanStatus">
+                <option value="ACTIVE">Active</option>
+                <option value="CLOSED">Closed</option>
+                <option value="DEFAULTED">Defaulted</option>
+            </select>
+        </div>
+        <p class="modal-err" id="loanErr"></p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeLoanModal()">Cancel</button>
+            <button class="btn-submit" id="loanSubmitBtn" onclick="addLoan()">Add Loan</button>
+        </div>
+    </div>
+</div>
+
 <body>
 
 <div class="navbar">
@@ -48,6 +133,10 @@
     </div>
 
     <div class="table-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <p style="font-weight:600; font-size:0.9rem; color:#1a3c5e; margin:0;">Loan History</p>
+            <button class="btn-add-loan" onclick="openLoanModal()">+ Add Loan</button>
+        </div>
         <table>
             <thead>
             <tr>
@@ -233,6 +322,86 @@
         } catch {
             document.getElementById('loanTable').innerHTML = '<tr><td colspan="5" class="loading">Could not load loans</td></tr>';
         }
+    }
+
+    function openLoanModal() {
+        document.getElementById('loanAmount').value = '';
+        document.getElementById('loanDisbursed').value = new Date().toISOString().split('T')[0];
+        document.getElementById('loanDue').value = '';
+        document.getElementById('loanStatus').value = 'ACTIVE';
+        document.getElementById('loanErr').style.display = 'none';
+        document.getElementById('loanModal').classList.add('open');
+    }
+
+    function closeLoanModal() {
+        document.getElementById('loanModal').classList.remove('open');
+    }
+
+    document.getElementById('loanModal').addEventListener('click', function(e) {
+        if (e.target === this) closeLoanModal();
+    });
+
+    async function addLoan() {
+        const amount = document.getElementById('loanAmount').value.trim();
+        const disbursed = document.getElementById('loanDisbursed').value;
+        const due = document.getElementById('loanDue').value;
+        const status = document.getElementById('loanStatus').value;
+        const errEl = document.getElementById('loanErr');
+        const btn = document.getElementById('loanSubmitBtn');
+
+        errEl.style.display = 'none';
+
+        if (!amount || !disbursed || !due) {
+            errEl.textContent = 'Amount, disbursed date and due date are required';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        if (isNaN(amount) || Number(amount) <= 0) {
+            errEl.textContent = 'Enter a valid loan amount';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        if (new Date(due) <= new Date(disbursed)) {
+            errEl.textContent = 'Due date must be after disbursed date';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/manager/loans', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    borrowerId: parseInt(borrowerId),
+                    amount: parseFloat(amount),
+                    disbursedDate: disbursed,
+                    dueDate: due,
+                    status: status
+                })
+            });
+
+            if (res.ok) {
+                closeLoanModal();
+                loadLoans();
+            } else {
+                errEl.textContent = 'Failed to add loan. Try again.';
+                errEl.style.display = 'block';
+            }
+        } catch (e) {
+            errEl.textContent = 'Connection error';
+            errEl.style.display = 'block';
+        }
+
+        btn.textContent = 'Add Loan';
+        btn.disabled = false;
     }
 
     loadBorrower();
