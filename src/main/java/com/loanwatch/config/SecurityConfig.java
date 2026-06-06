@@ -28,6 +28,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // these endpoints anyone can access
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
                         // only admin can access these
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // manager and admin can access these
