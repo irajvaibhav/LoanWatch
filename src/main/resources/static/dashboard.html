@@ -100,32 +100,27 @@
         return { 'Authorization': 'Bearer ' + token };
     }
 
-    async function getRiskLevel(borrowerId) {
-        try {
-            const res = await fetch(`/api/manager/borrowers/${borrowerId}/risk`, {
-                headers: authHeaders()
-            });
-            if (!res.ok) return null;
-            const data = await res.json();
-            return data.riskLevel || null;
-        } catch {
-            return null;
-        }
-    }
-
     async function loadDashboard() {
         try {
-            const res = await fetch('/api/manager/borrowers', {
-                headers: authHeaders()
-            });
+            const [borrowersRes, riskRes] = await Promise.all([
+                fetch('/api/manager/borrowers', { headers: authHeaders() }),
+                fetch('/api/manager/risk-scores', { headers: authHeaders() })
+            ]);
 
-            if (res.status === 403) {
+            if (borrowersRes.status === 403) {
                 document.getElementById('borrowerTable').innerHTML =
                     '<tr><td colspan="5" class="loading">Access denied — login as MANAGER or ADMIN</td></tr>';
                 return;
             }
 
-            const borrowers = await res.json();
+            const borrowers = await borrowersRes.json();
+            const riskScores = await riskRes.json();
+
+            // build a map of borrowerId -> riskLevel for fast lookup
+            const riskMap = {};
+            for (const r of riskScores) {
+                riskMap[r.borrowerId] = r.riskLevel;
+            }
 
             document.getElementById('totalCount').textContent = borrowers.length;
 
@@ -134,7 +129,7 @@
             tbody.innerHTML = '';
 
             for (const b of borrowers) {
-                const risk = await getRiskLevel(b.id);
+                const risk = riskMap[b.id] || null;
                 if (risk === 'HIGH') high++;
                 else if (risk === 'MEDIUM') medium++;
                 else if (risk === 'LOW') low++;

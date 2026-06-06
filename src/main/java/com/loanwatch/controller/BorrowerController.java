@@ -2,6 +2,7 @@ package com.loanwatch.controller;
 
 import com.loanwatch.model.Borrower;
 import com.loanwatch.model.RiskScore;
+import com.loanwatch.repository.RiskScoreRepository;
 import com.loanwatch.service.BorrowerService;
 import com.loanwatch.service.RiskScoringService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -20,6 +21,9 @@ public class BorrowerController {
 
     @Autowired
     private RiskScoringService riskScoringService;
+
+    @Autowired
+    private RiskScoreRepository riskScoreRepository;
 
     // add new borrower
     @PostMapping("/borrowers")
@@ -63,5 +67,11 @@ public class BorrowerController {
     @GetMapping("/borrowers/{id}/risk")
     public RiskScore getRiskScore(@PathVariable Long id) {
         return riskScoringService.getRiskScore(id);
+    }
+
+    // get all risk scores in one call
+    @GetMapping("/risk-scores")
+    public List<RiskScore> getAllRiskScores() {
+        return riskScoreRepository.findAll();
     }
 }
