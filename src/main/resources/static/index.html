@@ -11,7 +11,6 @@
             margin-bottom: 24px;
             border-bottom: 2px solid #f0f0f0;
         }
-
         .tab {
             flex: 1;
             text-align: center;
@@ -23,20 +22,12 @@
             border-bottom: 2px solid transparent;
             margin-bottom: -2px;
         }
-
         .tab.active {
             color: #1a3c5e;
             border-bottom-color: #1a3c5e;
         }
-
-        .tab-panel {
-            display: none;
-        }
-
-        .tab-panel.active {
-            display: block;
-        }
-
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
         .success-msg {
             color: #27ae60;
             font-size: 0.82rem;
@@ -44,7 +35,6 @@
             text-align: center;
             display: none;
         }
-
         .role-select {
             width: 100%;
             padding: 10px 12px;
@@ -55,10 +45,36 @@
             background: white;
             color: #333;
         }
-
-        .role-select:focus {
-            border-color: #1a3c5e;
+        .role-select:focus { border-color: #1a3c5e; }
+        .demo-box {
+            background: #f0f5fa;
+            border: 1px solid #cce0f5;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            text-align: center;
         }
+        .demo-box p {
+            margin: 0 0 4px 0;
+            font-size: 0.82rem;
+            color: #555;
+        }
+        .demo-box strong {
+            color: #1a3c5e;
+            font-size: 0.85rem;
+        }
+        .btn-demo {
+            margin-top: 8px;
+            background: white;
+            color: #1a3c5e;
+            border: 1px solid #1a3c5e;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-demo:hover { background: #1a3c5e; color: white; }
     </style>
 </head>
 <body>
@@ -68,7 +84,15 @@
         <h2>LoanWatch</h2>
         <p>Loan risk monitoring system</p>
 
-        <div class="tabs" style="margin-top: 20px;">
+        <!-- Demo box -->
+        <div class="demo-box" style="margin-top: 16px;">
+            <strong>🔍 Try Demo</strong>
+            <p>Email: demo@loanwatch.com</p>
+            <p>Password: demo123</p>
+            <button class="btn-demo" onclick="fillDemo()">Use Demo Account</button>
+        </div>
+
+        <div class="tabs">
             <div class="tab active" onclick="switchTab('login')">Sign In</div>
             <div class="tab" onclick="switchTab('register')">Register</div>
         </div>
@@ -121,10 +145,15 @@
         window.location.href = 'dashboard.html';
     }
 
+    function fillDemo() {
+        switchTab('login');
+        document.getElementById('loginEmail').value = 'demo@loanwatch.com';
+        document.getElementById('loginPassword').value = 'demo123';
+    }
+
     function switchTab(tab) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-
         if (tab === 'login') {
             document.querySelectorAll('.tab')[0].classList.add('active');
             document.getElementById('loginPanel').classList.add('active');
@@ -138,7 +167,6 @@
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
         const errEl = document.getElementById('loginErr');
-
         errEl.style.display = 'none';
 
         if (!email || !password) {
@@ -151,7 +179,6 @@
             const res = await fetch(`/api/auth/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
                 method: 'POST'
             });
-
             const token = await res.text();
 
             if (!res.ok || token.toLowerCase().includes('not found') || token.toLowerCase().includes('wrong')) {
@@ -190,7 +217,6 @@
             const res = await fetch(`/api/auth/register?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&role=${role}`, {
                 method: 'POST'
             });
-
             const msg = await res.text();
 
             if (msg.toLowerCase().includes('already')) {
