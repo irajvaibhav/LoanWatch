@@ -182,7 +182,14 @@
                 return;
             }
 
-            const data = await res.json();
+            const text = await res.text();
+
+            if (!text || text === 'null') {
+                document.getElementById('riskDisplay').innerHTML = '<p style="color:#aaa; font-size:0.88rem;">Not scored yet — go to dashboard and click Run Risk Engine</p>';
+                return;
+            }
+
+            const data = JSON.parse(text);
             const level = data.riskLevel;
 
             document.getElementById('riskDisplay').innerHTML = `
@@ -192,7 +199,7 @@
                     Last calculated: ${new Date(data.calculatedAt).toLocaleString('en-IN')}
                 </p>
             `;
-        } catch {
+        } catch (e) {
             document.getElementById('riskDisplay').innerHTML = '<p style="color:#aaa; font-size:0.88rem;">Could not load risk score</p>';
         }
     }
