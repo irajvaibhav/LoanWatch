@@ -2,6 +2,7 @@ package com.loanwatch.controller;
 
 import com.loanwatch.model.Payment;
 import com.loanwatch.service.PaymentService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,6 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/manager")
+@SecurityRequirement(name = "Bearer Authentication")
 public class PaymentController {
 
     @Autowired

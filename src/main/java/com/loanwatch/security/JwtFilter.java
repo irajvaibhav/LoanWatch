@@ -26,19 +26,19 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // get the token from request header
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
 
-            // remove "Bearer " and get the actual token
             String token = authHeader.substring(7);
 
             if (jwtUtil.isTokenValid(token)) {
                 String email = jwtUtil.getEmail(token);
                 String role = jwtUtil.getRole(token);
 
-                // tell Spring who this user is
+                // debug line
+                System.out.println("Token valid for: " + email + " role: " + role);
+
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
                                 email,
@@ -47,7 +47,11 @@ public class JwtFilter extends OncePerRequestFilter {
                         );
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
+            } else {
+                System.out.println("Token is invalid!");
             }
+        } else {
+            System.out.println("No token found in request!");
         }
 
         filterChain.doFilter(request, response);

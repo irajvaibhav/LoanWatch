@@ -2,6 +2,7 @@ package com.loanwatch.controller;
 
 import com.loanwatch.model.User;
 import com.loanwatch.repository.UserRepository;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
+@SecurityRequirement(name = "Bearer Authentication")
 public class AdminController {
 
     @Autowired

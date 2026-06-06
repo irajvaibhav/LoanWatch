@@ -4,6 +4,7 @@ import com.loanwatch.model.Borrower;
 import com.loanwatch.model.RiskScore;
 import com.loanwatch.service.BorrowerService;
 import com.loanwatch.service.RiskScoringService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/agent")
+@SecurityRequirement(name = "Bearer Authentication")
 public class AgentController {
 
     @Autowired
