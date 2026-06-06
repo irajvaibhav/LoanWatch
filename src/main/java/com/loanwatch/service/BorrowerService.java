@@ -37,4 +37,11 @@ public class BorrowerService {
     public void deleteBorrower(Long id) {
         borrowerRepository.deleteById(id);
     }
+
+    public Borrower assignAgent(Long borrowerId, Long agentId) {
+        Borrower borrower = borrowerRepository.findById(borrowerId).orElse(null);
+        if (borrower == null) return null;
+        borrower.setAssignedAgentId(agentId);
+        return borrowerRepository.save(borrower);
+    }
 }

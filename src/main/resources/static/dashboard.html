@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoanWatch – Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .btn-run {
+            background: #1a3c5e;
+            color: white;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-run:hover { background: #14304d; }
+        .btn-run:disabled { background: #aaa; cursor: not-allowed; }
+    </style>
 </head>
 <body>
 
@@ -17,7 +31,10 @@
 </div>
 
 <div class="page-content">
-    <p class="page-title">Borrower Overview</p>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+        <p class="page-title" style="margin-bottom:0;">Borrower Overview</p>
+        <button class="btn-run" id="riskBtn" onclick="runRiskEngine()">▶ Run Risk Engine</button>
+    </div>
 
     <div class="stats-row">
         <div class="stat-card">
@@ -144,6 +161,29 @@
         } catch (e) {
             document.getElementById('borrowerTable').innerHTML =
                 '<tr><td colspan="5" class="loading">Failed to load data</td></tr>';
+        }
+    }
+
+    async function runRiskEngine() {
+        const btn = document.getElementById('riskBtn');
+        btn.disabled = true;
+        btn.textContent = 'Running...';
+
+        try {
+            const res = await fetch('/api/manager/run-risk-engine', {
+                method: 'POST',
+                headers: authHeaders()
+            });
+            const msg = await res.text();
+            btn.textContent = '✓ Done';
+            setTimeout(() => {
+                btn.textContent = '▶ Run Risk Engine';
+                btn.disabled = false;
+                loadDashboard();
+            }, 1500);
+        } catch (e) {
+            btn.textContent = 'Failed';
+            btn.disabled = false;
         }
     }
 

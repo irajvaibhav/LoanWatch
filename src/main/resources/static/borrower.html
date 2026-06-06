@@ -33,6 +33,20 @@
         </div>
     </div>
 
+    <div class="info-card" style="margin-bottom: 24px;">
+        <h3>Assign Field Agent</h3>
+        <div style="display:flex; gap:12px; align-items:center; margin-top:10px;">
+            <div>
+                <p style="font-size:0.82rem; color:#888; margin-bottom:6px;">Current Agent ID: <span id="currentAgentId" style="font-weight:600; color:#1a3c5e;">–</span></p>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="agentIdInput" placeholder="Enter Agent ID" style="padding:9px 12px; border:1px solid #ddd; border-radius:6px; font-size:0.88rem; width:180px; outline:none;">
+                    <button onclick="assignAgent()" style="background:#1a3c5e; color:white; border:none; padding:9px 18px; border-radius:6px; font-size:0.85rem; cursor:pointer; font-weight:500;" id="assignBtn">Assign</button>
+                </div>
+            </div>
+            <p id="assignMsg" style="font-size:0.82rem; margin-top:20px; display:none;"></p>
+        </div>
+    </div>
+
     <div class="table-card">
         <table>
             <thead>
@@ -91,6 +105,7 @@
         const b = await res.json();
 
         document.title = `LoanWatch – ${b.name}`;
+        document.getElementById('currentAgentId').textContent = b.assignedAgentId || 'None';
 
         document.getElementById('borrowerInfo').innerHTML = `
             <h3>Borrower Info</h3>
@@ -115,6 +130,45 @@
                 <span class="value">${b.assignedAgentId || '–'}</span>
             </div>
         `;
+    }
+
+    async function assignAgent() {
+        const agentId = document.getElementById('agentIdInput').value.trim();
+        const msgEl = document.getElementById('assignMsg');
+        const btn = document.getElementById('assignBtn');
+
+        if (!agentId) {
+            msgEl.textContent = 'Please enter an Agent ID';
+            msgEl.style.color = '#e74c3c';
+            msgEl.style.display = 'block';
+            return;
+        }
+
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`/api/manager/borrowers/${borrowerId}/assign-agent?agentId=${agentId}`, {
+                method: 'PUT',
+                headers: authHeaders()
+            });
+
+            if (res.ok) {
+                msgEl.textContent = `✓ Agent ${agentId} assigned successfully`;
+                msgEl.style.color = '#27ae60';
+                document.getElementById('currentAgentId').textContent = agentId;
+            } else {
+                msgEl.textContent = 'Failed to assign agent';
+                msgEl.style.color = '#e74c3c';
+            }
+        } catch (e) {
+            msgEl.textContent = 'Connection error';
+            msgEl.style.color = '#e74c3c';
+        }
+
+        msgEl.style.display = 'block';
+        btn.textContent = 'Assign';
+        btn.disabled = false;
     }
 
     async function loadRisk() {

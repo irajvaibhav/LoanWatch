@@ -43,8 +43,13 @@ public class BorrowerController {
     public String deleteBorrower(@PathVariable Long id) {
         borrowerService.deleteBorrower(id);
         return "Borrower deleted";
-
     }
+
+    @PutMapping("/borrowers/{id}/assign-agent")
+    public Borrower assignAgent(@PathVariable Long id, @RequestParam Long agentId) {
+        return borrowerService.assignAgent(id, agentId);
+    }
+
     @PostMapping("/run-risk-engine")
     public String runRiskEngine() {
         riskScoringService.calculateRiskForAll();
