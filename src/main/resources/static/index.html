@@ -171,12 +171,8 @@
 </div>
 
 <script>
-    // only redirect if token exists AND user deliberately navigated here
-    // recruiters on a fresh machine won't have a token so they see this page
-    const existingToken = localStorage.getItem('token');
-    if (existingToken && !window.location.search.includes('logout')) {
-        window.location.href = 'dashboard.html';
-    }
+    // Always show the login page. Users must explicitly choose Sign In or Guest.
+    // dashboard.html already redirects back here if no token is found.
 
     function switchTab(tab) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
